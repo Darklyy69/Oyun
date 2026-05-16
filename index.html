@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>For Oyun</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:          #fdf6ee;
+      --env-bg:      #f7ede0;
+      --env-border:  #e2c9a8;
+      --flap:        #dfc9a0;
+      --seal:        #c9705a;
+      --letter-bg:   #fffaf4;
+      --text-dark:   #5c3d2e;
+      --text-mid:    #6b3a2a;
+      --text-muted:  #b08060;
+      --accent:      #c9705a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: 'Lora', serif;
+      overflow: hidden;
+    }
+
+    #stage {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: transform 1.8s cubic-bezier(0.4,0,0.2,1), opacity 1.5s ease;
+    }
+
+    #letter-card {
+      position: relative;
+      width: min(88vw, 390px);
+      background: var(--letter-bg);
+      border: 1px solid #e8d5b8;
+      border-radius: 4px;
+      padding: 1.8rem 1.8rem 1.4rem;
+      box-shadow: 0 8px 40px rgba(160,100,40,0.16);
+      z-index: 10;
+      margin-bottom: -55px;
+      transform: translateY(160px) scale(0.75);
+      opacity: 0;
+      transition: transform 2.4s cubic-bezier(0.22,1,0.36,1), opacity 1.1s ease;
+    }
+    #letter-card.risen { transform: translateY(0px) scale(1); opacity: 1; }
+
+    .lc-date { font-size: 11.5px; color: var(--text-muted); font-style: italic; letter-spacing: 0.07em; margin-bottom: 0.6rem; }
+    .lc-sal  { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--text-mid); font-style: italic; margin-bottom: 0.5rem; }
+    .lc-body { font-size: 0.87rem; line-height: 1.78; color: var(--text-dark); }
+
+    #env-wrap {
+      position: relative;
+      width: min(88vw, 340px);
+      height: 210px;
+      flex-shrink: 0;
+    }
+    .env-box {
+      position: absolute; inset: 0;
+      background: var(--env-bg);
+      border: 1.5px solid var(--env-border);
+      border-radius: 3px;
+      box-shadow: 0 12px 40px rgba(160,100,40,0.18);
+      overflow: hidden;
+    }
+    .env-box::before {
+      content: ''; position: absolute; bottom: 0; left: 0;
+      border-top: 105px solid transparent; border-bottom: 105px solid transparent;
+      border-left: 170px solid #f0ddc6;
+    }
+    .env-box::after {
+      content: ''; position: absolute; bottom: 0; right: 0;
+      border-top: 105px solid transparent; border-bottom: 105px solid transparent;
+      border-right: 170px solid #ead3b2;
+    }
+    .env-bottom {
+      position: absolute; bottom: 0; left: 0;
+      width: 0; height: 0;
+      border-left: 170px solid transparent;
+      border-right: 170px solid transparent;
+      border-bottom: 115px solid #e8d2b0;
+      z-index: 2;
+    }
+    .env-flap {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 115px;
+      transform-origin: top center;
+      transition: transform 4.2s cubic-bezier(0.3,0,0.1,1);
+      z-index: 6;
+    }
+    .env-flap::after {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 0; height: 0;
+      border-left: 170px solid transparent;
+      border-right: 170px solid transparent;
+      border-top: 115px solid var(--flap);
+    }
+    .seal {
+      position: absolute; top: 92px; left: 50%;
+      transform: translateX(-50%);
+      width: 48px; height: 48px;
+      background: var(--seal);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; z-index: 8;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+      transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.4,0,0.2,1);
+    }
+    .tap-hint {
+      margin-top: 1.5rem;
+      font-size: 13px; color: var(--text-muted);
+      font-style: italic; letter-spacing: 0.06em;
+      animation: breathe 2.5s ease-in-out infinite;
+      transition: opacity 0.5s ease;
+    }
+    @keyframes breathe { 0%,100%{opacity:0.35} 50%{opacity:1} }
+
+    /* ── FULL PAGE ── */
+    #full-page {
+      display: none; opacity: 0;
+      transition: opacity 1.4s ease;
+      padding: 2rem 1rem 3rem;
+      min-height: 100vh;
+      flex-direction: column;
+      align-items: center;
+    }
+    .confetti-bar {
+      text-align: center; font-size: 18px;
+      margin-bottom: 1.1rem; letter-spacing: 5px;
+      animation: sway 3s ease-in-out infinite alternate;
+    }
+    @keyframes sway { from{letter-spacing:3px} to{letter-spacing:8px} }
+
+    .full-card {
+      width: 100%; max-width: 540px;
+      background: var(--env-bg);
+      border: 1.5px solid var(--env-border);
+      border-radius: 4px;
+      padding: 2.4rem 2.4rem 2rem;
+      position: relative;
+      box-shadow: 0 8px 36px rgba(160,100,40,0.12);
+    }
+    .full-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, #e2c9a8, #c99b60, #e2c9a8);
+    }
+    .stamp {
+      position: absolute; top: 1.1rem; right: 1.3rem;
+      width: 44px; height: 52px;
+      background: #ffe8ec; border: 1.5px solid #f4b8c4; border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; box-shadow: inset 0 0 0 3px #fff;
+    }
+    .f-date    { font-size: 12px; color: var(--text-muted); font-style: italic; letter-spacing: 0.08em; margin-bottom: 1rem; }
+    .f-sal     { font-family: 'Playfair Display', serif; font-size: 1.28rem; color: var(--text-mid); font-style: italic; margin-bottom: 0.9rem; }
+    .f-body    { font-size: 0.96rem; line-height: 1.92; color: var(--text-dark); white-space: pre-wrap; margin-bottom: 1.2rem; }
+    .f-closing { font-family: 'Playfair Display', serif; font-size: 0.98rem; color: var(--text-mid); font-style: italic; }
+    .f-sig     { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--accent); margin-top: 0.3rem; }
+
+    .divider   { text-align: center; margin: 1.6rem 0 1.1rem; color: #d4a57c; font-size: 16px; letter-spacing: 7px; }
+    .ss-label  { text-align: center; font-size: 11px; letter-spacing: 0.13em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.7rem; }
+
+    .slideshow { position: relative; border-radius: 5px; overflow: hidden; background: #ede0d0; aspect-ratio: 4/3; border: 1.5px solid var(--env-border); }
+    .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.7s ease; }
+    .slide.active { opacity: 1; }
+    .slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .slide-cap { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(70,35,15,0.52); color: #fdf6ee; font-size: 12px; padding: 7px 14px; font-style: italic; text-align: center; }
+    .no-photo  { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: #f5ead8; }
+    .no-photo span:first-child { font-size: 28px; color: #d4a57c; }
+    .no-photo span:last-child  { font-size: 12px; color: var(--text-muted); font-style: italic; }
+
+    .slide-nav { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 0.8rem; }
+    .nav-btn { background: none; border: 1px solid #d4a57c; color: var(--accent); border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+    .nav-btn:hover { background: var(--env-bg); }
+    .dots { display: flex; gap: 6px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #d4a57c; opacity: 0.32; cursor: pointer; transition: opacity 0.2s; }
+    .dot.active { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<script>
+/* ============================================================
+   ✏️  CUSTOMIZE EVERYTHING HERE
+   ============================================================ */
+
+const CONFIG = {
+
+  // -- DATE shown on the letter --
+  // Set to a string like "June 15, 2025" to fix it,
+  // or leave as "" to auto-use today's date
+  date: "2026.5.17",
+
+  // -- LETTER CONTENT --
+  salutation: "For Tом эгч,",
+
+  // Short preview shown while rising from envelope
+  letterPreview: "Энэ жилийн төрсөн өдрөөр нь хамт байж чадахгүй байгаад уучлаарай, ингээд ч болов төрсөн өдрийн мэндийг хүргэе ээ 🥺🥺🥺.🌸",
+
+  // Full letter body (use \n for line breaks)
+  letterBody: `Анх жижигхэн хацрыг нь хараад л “ямар хөөрхөн хацартай охин бэ, нэмээд ёстой даруухан, яг л миний сонирхол” гэж бодоод дурлаж билээ. Тэрнээс хойш чат бичих зориг хүрэхгүй маш удаан явсан. Тэгсээр энд ирсэн ч чамайг ирснээс хойш Instagram руу чинь орж үзсээр л байсан.Нэг л өдөр “за яадаг юм, зүгээр л бичээд үзье, юу ч болсон яахав” гэж бодоод юм асуух шалтаг олоод 2025.08.21-ний 10:27-д анх бичиж билээ.Тэрнээс хойш яг 269 өдөр буюу 8 сар 26 хоног өнгөрчээ. Энэ хугацаанд утсаар ярих бүрд догдолж, айлын эрх бацаан шиг инээж, бүх л зүйлсийг ярилцаж маш их жаргалтай хугацааг өнгөрүүлжээ.Ирээдүйд ч гэсэн энэ бүхэн үргэлжилж, тэрнээс гадна хурдан уулзаад амьдралаа 0-ээс нь эхэлж хамтдаа босгомоор байна. Уулзах өдрөө тэсэн ядан хүлээсээр байна.
+
+ Төрсөн өдрөөр нь багахан ч болтугай баяртай болгох зүйл хийхийг хүсээд энэ захиаг бичин сууна. Төрсөн өдрийн мэнд миний аз жаргалын эх үүсвэр минь🥺. 🌸`,
+
+  closing: "Aliw ahn unsiidaa🥺🥺🥺,",
+  signature: "From your Tом ax 🤭💛𖨆𖨆",
+  // -- ENVELOPE --
+  sealEmoji:  "🌸",   // the wax seal icon
+  stampEmoji: "🌸",   // the stamp top-right
+  tapHint:    "tap to open 🌸",
+
+  // -- PHOTOS --
+  // Put your image files in the same folder as this HTML file.
+  // Then just type the filename below, e.g. "photo1.jpg"
+  // Leave a slot as "" to show a placeholder instead.
+  photos: [
+    { src: "b.png",  caption: "Childhood photo but together🌷" },
+    { src: "c.png",  caption: "First photo u've sent me 🌼" },
+    { src: "d.png",  caption: "Hamgiin hairtai zurag 💛" },
+    { src: "a.jpeg",  caption: "Zugeerl 💗" },
+  ],
+
+  // -- COLORS (CSS variable overrides) --
+  // Uncomment & change any line to customize colors
+  colors: {
+    // "--bg":         "#fdf6ee",
+    // "--env-bg":     "#f7ede0",
+    // "--seal":       "#c9705a",
+    // "--accent":     "#c9705a",
+    // "--text-dark":  "#5c3d2e",
+  },
+};
+
+/* ============================================================
+   Everything below runs automatically — no need to edit
+   ============================================================ */
+
+// Apply color overrides
+Object.entries(CONFIG.colors).forEach(([k,v]) =>
+  document.documentElement.style.setProperty(k, v)
+);
+</script>
+
+  <!-- STAGE -->
+  <div id="stage" onclick="openEnvelope()">
+    <div id="letter-card">
+      <div class="lc-date" id="peek-date"></div>
+      <div class="lc-sal" id="peek-sal"></div>
+      <div class="lc-body" id="peek-body"></div>
+    </div>
+    <div id="env-wrap">
+      <div class="env-box"></div>
+      <div class="env-bottom"></div>
+      <div class="env-flap" id="flap"></div>
+      <div class="seal" id="seal"></div>
+    </div>
+    <div class="tap-hint" id="tap-hint"></div>
+  </div>
+
+  <!-- FULL LETTER -->
+  <div id="full-page">
+    <div class="confetti-bar">🎀 🎂 🌸 🎁 🎀</div>
+    <div class="full-card">
+      <div class="stamp" id="full-stamp"></div>
+      <div class="f-date"    id="full-date"></div>
+      <div class="f-sal"     id="full-sal"></div>
+      <div class="f-body"    id="full-body"></div>
+      <div class="f-closing" id="full-closing"></div>
+      <div class="f-sig"     id="full-sig"></div>
+      <div class="divider">· · · ✿ · · ·</div>
+      <div class="ss-label">Big bro and cute lil sis</div>
+      <div class="slideshow" id="slideshow"></div>
+      <div class="slide-nav">
+        <button class="nav-btn" onclick="prevSlide()">&#8249;</button>
+        <div class="dots" id="dots"></div>
+        <button class="nav-btn" onclick="nextSlide()">&#8250;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Populate from config
+    const dateStr = CONFIG.date || new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+    document.getElementById('peek-date').textContent  = dateStr;
+    document.getElementById('peek-sal').textContent   = CONFIG.salutation;
+    document.getElementById('peek-body').textContent  = CONFIG.letterPreview;
+    document.getElementById('tap-hint').textContent   = CONFIG.tapHint;
+    document.getElementById('seal').textContent       = CONFIG.sealEmoji;
+    document.getElementById('full-stamp').textContent = CONFIG.stampEmoji;
+    document.getElementById('full-date').textContent  = dateStr;
+    document.getElementById('full-sal').textContent   = CONFIG.salutation;
+    document.getElementById('full-body').textContent  = CONFIG.letterBody;
+    document.getElementById('full-closing').textContent = CONFIG.closing;
+    document.getElementById('full-sig').textContent   = CONFIG.signature;
+
+    // ── Animation ──
+    let opened = false;
+
+    function openEnvelope() {
+      if (opened) return;
+      opened = true;
+
+      const flap   = document.getElementById('flap');
+      const seal   = document.getElementById('seal');
+      const hint   = document.getElementById('tap-hint');
+      const letter = document.getElementById('letter-card');
+      const stage  = document.getElementById('stage');
+
+      stage.style.cursor = 'default';
+      hint.style.opacity = '0';
+
+      // seal pops off
+      setTimeout(() => {
+        seal.style.opacity = '0';
+        seal.style.transform = 'translateX(-50%) translateY(-16px) scale(0.35) rotate(20deg)';
+      }, 400);
+
+      // flap folds open
+      setTimeout(() => {
+        flap.style.transform = 'rotateX(178deg)';
+      }, 900);
+
+      // letter rises — fully above envelope, bigger
+      setTimeout(() => {
+        letter.classList.add('risen');
+      }, 1900);
+
+      // pause to read (3.5s), then slide everything down
+      setTimeout(() => {
+        stage.style.transform = 'translateY(130px)';
+        stage.style.opacity   = '0';
+      }, 5500);
+
+      // show full page
+      setTimeout(() => {
+        stage.style.display = 'none';
+        const full = document.getElementById('full-page');
+        full.style.display = 'flex';
+        document.body.style.overflow = 'auto';
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          full.style.opacity = '1';
+        }));
+        buildSlides();
+      }, 7200);
+    }
+
+    // ── Slideshow ──
+    let cur = 0;
+    const photos = CONFIG.photos;
+    const NUM = photos.length;
+
+    function buildSlides() {
+      const ss = document.getElementById('slideshow');
+      const dc = document.getElementById('dots');
+      ss.innerHTML = ''; dc.innerHTML = '';
+
+      photos.forEach((p, i) => {
+        const slide = document.createElement('div');
+        slide.className = 'slide' + (i === cur ? ' active' : '');
+
+        if (p.src) {
+          const img = document.createElement('img');
+          img.src = p.src;
+          img.alt = p.caption;
+          slide.appendChild(img);
+        } else {
+          const ph = document.createElement('div');
+          ph.className = 'no-photo';
+          ph.innerHTML = '<span>📷</span><span>add a photo in the config</span>';
+          slide.appendChild(ph);
+        }
+
+        const cap = document.createElement('div');
+        cap.className = 'slide-cap';
+        cap.textContent = p.caption;
+        slide.appendChild(cap);
+        ss.appendChild(slide);
+
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === cur ? ' active' : '');
+        dot.onclick = () => goTo(i);
+        dc.appendChild(dot);
+      });
+    }
+
+    function goTo(n) { cur = (n + NUM) % NUM; buildSlides(); }
+    function nextSlide() { goTo(cur + 1); }
+    function prevSlide() { goTo(cur - 1); }
+  </script>
+</body>
+</html>
